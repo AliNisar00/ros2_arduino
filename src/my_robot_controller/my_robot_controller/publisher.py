@@ -2,10 +2,10 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
-class LEDCommandPublisher(Node):
+class GearCommandPublisher(Node):
     def __init__(self):
-        super().__init__('led_command_publisher')
-        self.publisher_ = self.create_publisher(String, 'led_control', 10)
+        super().__init__('gear_command_publisher')
+        self.publisher_ = self.create_publisher(String, 'gear_control', 10)
 
     def send_command(self, command):
         msg = String()
@@ -15,14 +15,14 @@ class LEDCommandPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = LEDCommandPublisher()
+    node = GearCommandPublisher()
 
     while rclpy.ok():
-        command = input("Enter 'ON' to turn LED on, 'OFF' to turn LED off: ").strip().upper()
-        if command in ["ON", "OFF"]:
+        command = input("Enter '0' (Neutral - All OFF), '1' (Forward - D4 ON, D7 OFF), '2' (Reverse - D7 ON, D4 OFF): ").strip()
+        if command in ["0", "1", "2"]:
             node.send_command(command)
         else:
-            print("Invalid command. Enter 'ON' or 'OFF'.")
+            print("Invalid command. Enter '0', '1', or '2'.")
 
     node.destroy_node()
     rclpy.shutdown()
