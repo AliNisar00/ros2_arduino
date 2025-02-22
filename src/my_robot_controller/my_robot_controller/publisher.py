@@ -1,31 +1,45 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from sensor_msgs.msg import Joy  # Import Joy message
 
 class GearCommandPublisher(Node):
     def __init__(self):
         super().__init__('gear_command_publisher')
         self.publisher_ = self.create_publisher(String, 'gear_control', 10)
+        self.subscription = self.create_subscription(Joy, 'joy', self.joy_callback, 10)
+        
+        self.current_gear = "1"  # Default to Forward
+        self.previous_lb_state = False  # Track previous state of LB button
+        self.get_logger().info('Xbox Controller Gear Control Initialized')
+        
+        # Publish initial gear state
+        self.publish_gear()
+    
+    def joy_callback(self, msg):
+        lb_pressed = msg.buttons[4] == 1  # LB button index in Joy message
+        
+        if lb_pressed and not self.previous_lb_state:
+            # Toggle gear when LB is pressed
+            self.current_gear = "2" if self.current_gear == "1" else "1"
+            self.publish_gear()
+        
+        self.previous_lb_state = lb_pressed  # Update state tracking
 
-    def send_command(self, command):
+    def publish_gear(self):
         msg = String()
-        msg.data = command
+        msg.data = self.current_gear
         self.publisher_.publish(msg)
         self.get_logger().info(f'Published: "{msg.data}"')
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = GearCommandPublisher()
-
-    while rclpy.ok():
-        command = input("Enter '0' (Neutral - All OFF), '1' (Forward - D4 ON, D7 OFF), '2' (Reverse - D7 ON, D4 OFF): ").strip()
-        if command in ["0", "1", "2"]:
-            node.send_command(command)
-        else:
-            print("Invalid command. Enter '0', '1', or '2'.")
-
+    rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
