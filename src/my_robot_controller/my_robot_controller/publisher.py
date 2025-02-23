@@ -7,6 +7,7 @@ class GearCommandPublisher(Node):
     def __init__(self):
         super().__init__('gear_command_publisher')
         self.publisher_ = self.create_publisher(String, 'gear_control', 10)
+        self.state_publisher_ = self.create_publisher(String, 'gear_state', 10)  # topic for public gear state
         self.subscription = self.create_subscription(Joy, 'joy', self.joy_callback, 10)
         
         self.current_gear = "1"  # Default to Forward
@@ -15,7 +16,7 @@ class GearCommandPublisher(Node):
         
         # Publish initial gear state
         self.publish_gear()
-    
+
     def joy_callback(self, msg):
         lb_pressed = msg.buttons[4] == 1  # LB button index in Joy message
         
@@ -30,8 +31,8 @@ class GearCommandPublisher(Node):
         msg = String()
         msg.data = self.current_gear
         self.publisher_.publish(msg)
-        self.get_logger().info(f'Published: "{msg.data}"')
-
+        self.state_publisher_.publish(msg)  # Publish to gear_state as well
+        self.get_logger().info(f'Published Gear Command: "{msg.data}"')
 
 def main(args=None):
     rclpy.init(args=args)
@@ -39,7 +40,6 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
